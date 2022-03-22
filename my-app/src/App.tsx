@@ -6,31 +6,58 @@ import Homepage from './pages/Homepage'
 import WebsiteLayout from './pages/layouts/WebsiteLayout'
 import AdminLayout from './pages/layouts/AdminLayout'
 import ProductDetail from './pages/ProductDetail'
-import ProductManager from './pages/ProductManager'
-
+import ProductManager from './pages/ProductManager';
+import { ProductType } from './pages/types/product'
+import { add, list, remove } from './api/product'
+import ProductAdd from './pages/ProductAdd'
 
 function App() {
-  const [products, setProducts] = useState([]);
-  useEffect(() => { // 3 c
-    const getProducts = async () => {
-        const response = await fetch('http://localhost:8000/api/products/');
-        const data = await response.json();
-        setProducts(data);
-    }   
-    getProducts();
-}, []);
+  const [count, setCount] = useState(0);
+  const [status, setStatus] = useState(false);
+
+  const [products, setProducts] = useState<ProductType[]>([]);
+
+  useEffect(() => {
+      const getProducts = async () => {
+            const { data } = await list();
+            setProducts(data);
+      }
+      getProducts();
+  }, [])
+
+  const removeItem = (id) => {
+    
+    remove(id);
+    // reRender
+    setProducts(products.filter(item => item.id !== id));
+
+
+    // setProduct()
+  }
+  const onHanldeAdd = (data) => {
+      add(data);
+      setProducts([...products, data])
+  }
   return (
     <div className="container">
-      {products.map(item => <div>{item.name}</div>)}
+      {count} <button onClick={() => setCount(count + 1)}>Click</button>
+      <button onClick={() => setStatus(true)}>Click</button>
+      <div>
+        {products.map(item => item.name)}
+      </div>
         <Routes>
           <Route path="/" element={<WebsiteLayout />}>
               <Route index element={<Homepage />} />
-              <Route path="product" element={<h1>Product Page</h1>}/>
-              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="product">
+                <Route index element={<h1>Product Page</h1>} />
+                <Route path=":id" element={<ProductDetail />} />
+              </Route>
           </Route>
           <Route path="admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="dashboard" />} />
               <Route path="dashboard" element={<h1>Dashboard page</h1>} />
+              <Route path="product" element={<ProductManager products={products} onRemove={removeItem}/>} />
+              <Route path="/admin/product/add" element={<ProductAdd onAdd={onHanldeAdd}/>} />
           </Route>
         </Routes>
     </div>
